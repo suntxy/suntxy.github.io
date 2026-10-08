@@ -1,1 +1,406 @@
-hello world
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>时光药检 ChronoCure — 用药打卡与检查提醒</title>
+<meta name="description" content="时光药检（ChronoCure）是一款极简的健康管理应用：以疾病为维度，把每天的用药、定期的检查和报告单照片放在一处，帮你按时服药、按时复查。数据只在本机，无账号、无自建服务器。">
+<!-- TODO: 上架后把 APP_STORE_URL 替换为真实 App Store 链接（script 底部常量） -->
+<style>
+  :root{
+    --teal:#14a89f;
+    --teal-dark:#0b7f78;
+    --teal-deep:#075e59;
+    --ink:#10302e;
+    --muted:#5b7371;
+    --bg:#f5faf9;
+    --card:#ffffff;
+    --line:#e2efed;
+    --radius:18px;
+    --shadow:0 10px 30px rgba(7,94,89,.10);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  img{max-width:100%;display:block}
+  a{color:var(--teal-dark);text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  /* ---------- 顶栏 ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(245,250,249,.85);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--ink)}
+  .brand img{width:32px;height:32px;border-radius:8px}
+  .lang-switch{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
+  .lang-switch button{
+    border:0;background:transparent;padding:6px 14px;font-size:13px;cursor:pointer;color:var(--muted);
+    font-family:inherit;
+  }
+  .lang-switch button.active{background:var(--teal);color:#fff}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    background:linear-gradient(160deg,#17b8ad 0%,#0d8f86 55%,#076d66 100%);
+    color:#fff;overflow:hidden;
+  }
+  .hero-inner{
+    display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center;
+    padding:72px 0 80px;
+  }
+  .hero .icon{width:104px;height:104px;border-radius:26px;box-shadow:0 12px 32px rgba(0,0,0,.25)}
+  .hero h1{font-size:44px;line-height:1.2;margin:20px 0 6px;letter-spacing:.5px}
+  .hero .en-name{font-size:20px;opacity:.85;font-weight:500}
+  .hero .tagline{font-size:19px;margin:18px 0 8px;opacity:.95;max-width:26em}
+  .hero .sub{font-size:15px;opacity:.78;max-width:30em}
+  .cta-row{display:flex;gap:14px;margin-top:30px;flex-wrap:wrap}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;padding:14px 26px;border-radius:14px;
+    font-size:16px;font-weight:600;transition:transform .15s ease,box-shadow .15s ease;
+  }
+  .btn:hover{transform:translateY(-2px)}
+  .btn-primary{background:#fff;color:var(--teal-deep);box-shadow:0 8px 24px rgba(0,0,0,.18)}
+  .btn-ghost{border:1.5px solid rgba(255,255,255,.55);color:#fff}
+  .hero-shot{display:flex;justify-content:center}
+  .hero-shot img{
+    width:300px;border-radius:28px;
+    box-shadow:0 24px 60px rgba(0,0,0,.35);
+    border:6px solid rgba(255,255,255,.15);
+  }
+
+  /* ---------- 通用区块 ---------- */
+  section{padding:72px 0}
+  .sec-title{font-size:32px;text-align:center;margin-bottom:8px}
+  .sec-sub{text-align:center;color:var(--muted);margin-bottom:44px;font-size:16px}
+
+  /* ---------- 功能 ---------- */
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .feature{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px 24px;box-shadow:var(--shadow);
+  }
+  .feature .glyph{
+    width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-size:22px;background:linear-gradient(150deg,#e0f6f4,#c9efec);margin-bottom:14px;
+  }
+  .feature h3{font-size:17px;margin-bottom:6px}
+  .feature p{font-size:14px;color:var(--muted)}
+
+  /* ---------- 截图 ---------- */
+  .shots-section{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .shots{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  .shot{text-align:center}
+  .shot img{
+    width:100%;border-radius:22px;border:1px solid var(--line);
+    box-shadow:0 12px 32px rgba(7,94,89,.14);
+  }
+  .shot figcaption{margin-top:12px;font-size:14px;color:var(--muted)}
+
+  /* ---------- 隐私 ---------- */
+  .privacy{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .privacy .feature{text-align:left}
+  .privacy .glyph{background:linear-gradient(150deg,#e6f0ff,#d4e5ff)}
+
+  /* ---------- 订阅 ---------- */
+  .pricing-card{
+    max-width:560px;margin:0 auto;background:var(--card);border:1px solid var(--line);
+    border-radius:24px;padding:40px;text-align:center;box-shadow:var(--shadow);
+  }
+  .pricing-card .price{font-size:40px;font-weight:800;color:var(--teal-deep);margin:10px 0 2px}
+  .pricing-card .price small{font-size:16px;font-weight:500;color:var(--muted)}
+  .pricing-card p{color:var(--muted);font-size:14px;margin-top:10px}
+
+  /* ---------- 页脚 ---------- */
+  footer{background:var(--teal-deep);color:#cfe7e5;padding:36px 0;font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
+  footer a{color:#a9dcd8}
+  footer a:hover{color:#fff}
+
+  @media (max-width:860px){
+    .hero-inner{grid-template-columns:1fr;text-align:center;padding:56px 0 64px}
+    .hero .icon{margin:0 auto}
+    .hero .tagline,.hero .sub{margin-left:auto;margin-right:auto}
+    .cta-row{justify-content:center}
+    .hero-shot img{width:240px;margin-top:8px}
+    .features{grid-template-columns:1fr 1fr}
+    .privacy{grid-template-columns:1fr}
+    .shots{grid-template-columns:1fr 1fr}
+    .hero h1{font-size:34px}
+    .sec-title{font-size:26px}
+  }
+  @media (max-width:520px){
+    .features{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="brand">
+      <img src="assets/icon.jpg" alt="ChronoCure icon">
+      <span data-i18n="brand">时光药检</span>
+    </div>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button id="btn-zh" type="button">中文</button>
+      <button id="btn-en" type="button">EN</button>
+    </div>
+  </div>
+</header>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="wrap hero-inner">
+    <div>
+      <img class="icon" src="assets/icon.jpg" alt="ChronoCure app icon">
+      <h1 data-i18n="brand">时光药检</h1>
+      <div class="en-name">ChronoCure</div>
+      <p class="tagline" data-i18n="tagline">按疾病管理每天的用药与定期检查，帮你按时服药、按时复查。</p>
+      <p class="sub" data-i18n="heroSub">数据只存在本机，无账号、无自建服务器；可选备份也只进你自己的 iCloud。</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" id="cta-download" href="#" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.05 20.28c-.98.95-2.05.86-3.08.41-1.09-.47-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.41C2.79 15.25 3.51 7.59 9.05 7.31c1.34.07 2.28.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+          <span data-i18n="ctaDownload">App Store 下载</span>
+        </a>
+        <a class="btn btn-ghost" href="#features" data-i18n="ctaFeatures">了解功能</a>
+      </div>
+    </div>
+    <div class="hero-shot">
+      <img data-shot="01_today" src="assets/01_today_zh.png" alt="App screenshot — today">
+    </div>
+  </div>
+</div>
+
+<!-- 功能 -->
+<section id="features">
+  <div class="wrap">
+    <h2 class="sec-title" data-i18n="featuresTitle">一处管理用药与检查</h2>
+    <p class="sec-sub" data-i18n="featuresSub">极简设计，只做提醒与记录这一件事，并把它做好。</p>
+    <div class="features">
+      <div class="feature">
+        <div class="glyph">💊</div>
+        <h3 data-i18n="f1t">用药提醒与打卡</h3>
+        <p data-i18n="f1d">自定义药品、剂量与服药时间，点一下完成打卡；错过打卡 30 分钟再提醒一次，已打卡的时段不再打扰。</p>
+      </div>
+      <div class="feature">
+        <div class="glyph">🗂️</div>
+        <h3 data-i18n="f2t">按疾病管理</h3>
+        <p data-i18n="f2d">以疾病为维度组织药品与检查计划；康复后一键结束，不再生成待办与提醒。</p>
+      </div>
+      <div class="feature">
+        <div class="glyph">🩺</div>
+        <h3 data-i18n="f3t">检查计划与提醒</h3>
+        <p data-i18n="f3d">设置下次日期与固定重复周期，提前 1/3/7 天提醒；完成后自动排期下一次。</p>
+      </div>
+      <div class="feature">
+        <div class="glyph">📄</div>
+        <h3 data-i18n="f4t">报告单照片留存</h3>
+        <p data-i18n="f4d">化验单、报告单拍照随记录保存，全屏缩放翻阅，可随时导出分享。</p>
+      </div>
+      <div class="feature">
+        <div class="glyph">📅</div>
+        <h3 data-i18n="f5t">日历与统计</h3>
+        <p data-i18n="f5d">日历回顾每一天的用药与检查，连续打卡天数、完成率一目了然。</p>
+      </div>
+      <div class="feature">
+        <div class="glyph">☁️</div>
+        <h3 data-i18n="f6t">iCloud 备份与导出</h3>
+        <p data-i18n="f6d">备份保存在你自己的 iCloud Drive，换机可整体恢复；也可随时导出全部数据与照片。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 截图 -->
+<section class="shots-section">
+  <div class="wrap">
+    <h2 class="sec-title" data-i18n="shotsTitle">看一眼，就懂</h2>
+    <p class="sec-sub" data-i18n="shotsSub">今日待办、疾病详情、日历与统计。</p>
+    <div class="shots">
+      <figure class="shot">
+        <img data-shot="01_today" src="assets/01_today_zh.png" alt="Today">
+        <figcaption data-i18n="cap1">今日用药，打卡一下就好</figcaption>
+      </figure>
+      <figure class="shot">
+        <img data-shot="03_disease_detail" src="assets/03_disease_detail_zh.png" alt="Condition detail">
+        <figcaption data-i18n="cap2">用药与检查，一处管理</figcaption>
+      </figure>
+      <figure class="shot">
+        <img data-shot="04_history_calendar" src="assets/04_history_calendar_zh.png" alt="Calendar">
+        <figcaption data-i18n="cap3">每一天，都有记录</figcaption>
+      </figure>
+      <figure class="shot">
+        <img data-shot="05_history_stats" src="assets/05_history_stats_zh.png" alt="Stats">
+        <figcaption data-i18n="cap4">坚持，看得见</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- 隐私 -->
+<section>
+  <div class="wrap">
+    <h2 class="sec-title" data-i18n="privacyTitle">健康数据，只属于你</h2>
+    <p class="sec-sub" data-i18n="privacySub">三个不：无账号、无追踪、无自建服务器。</p>
+    <div class="privacy">
+      <div class="feature">
+        <div class="glyph">📱</div>
+        <h3 data-i18n="p1t">数据只在本机</h3>
+        <p data-i18n="p1d">所有记录保存在你的 iPhone 上，App 自身没有任何自建服务器，不向开发者上传数据。</p>
+      </div>
+      <div class="feature">
+        <div class="glyph">🔒</div>
+        <h3 data-i18n="p2t">备份在你自己的 iCloud</h3>
+        <p data-i18n="p2d">可选备份由 Apple iCloud 服务承载，仅本人可见，连开发者都无法访问。</p>
+      </div>
+      <div class="feature">
+        <div class="glyph">🚫</div>
+        <h3 data-i18n="p3t">无账号、无追踪</h3>
+        <p data-i18n="p3d">开箱即用，无需注册；不做任何行为追踪，报告单照片不随系统整机备份外泄。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 订阅 -->
+<section>
+  <div class="wrap">
+    <h2 class="sec-title" data-i18n="pricingTitle">全部功能，免费使用</h2>
+    <p class="sec-sub" data-i18n="pricingSub">免费版含横幅广告；订阅会员仅用于去除广告，不锁任何功能。</p>
+    <div class="pricing-card">
+      <div data-i18n="pricingBadge">会员订阅 · 自动续费年订阅</div>
+      <div class="price"><span data-i18n="pricingPrice">¥19.9</span><small data-i18n="pricingPer"> / 年</small></div>
+      <p data-i18n="pricingNote">订阅后完全无广告。可随时在「设置 &gt; Apple ID &gt; 订阅」中管理或取消。</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>© 2026 <span data-i18n="brand">时光药检</span> ChronoCure</div>
+    <div>
+      <a id="link-privacy" href="https://suntxy.github.io/MedicalAssistant/privacy.html" data-i18n="footerPrivacy">隐私政策</a>
+      &nbsp;·&nbsp;
+      <a id="link-support" href="https://suntxy.github.io/MedicalAssistant/index.html" data-i18n="footerSupport">技术支持</a>
+      &nbsp;·&nbsp;
+      <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" data-i18n="footerTerms">使用条款</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ====== TODO: 上架后替换为真实 App Store 链接 ======
+const APP_STORE_URL = "https://apps.apple.com/"; // ← 替换这里
+
+const i18n = {
+  zh: {
+    brand: "时光药检",
+    tagline: "按疾病管理每天的用药与定期检查，帮你按时服药、按时复查。",
+    heroSub: "数据只存在本机，无账号、无自建服务器；可选备份也只进你自己的 iCloud。",
+    ctaDownload: "App Store 下载",
+    ctaFeatures: "了解功能",
+    featuresTitle: "一处管理用药与检查",
+    featuresSub: "极简设计，只做提醒与记录这一件事，并把它做好。",
+    f1t: "用药提醒与打卡", f1d: "自定义药品、剂量与服药时间，点一下完成打卡；错过打卡 30 分钟再提醒一次，已打卡的时段不再打扰。",
+    f2t: "按疾病管理", f2d: "以疾病为维度组织药品与检查计划；康复后一键结束，不再生成待办与提醒。",
+    f3t: "检查计划与提醒", f3d: "设置下次日期与固定重复周期，提前 1/3/7 天提醒；完成后自动排期下一次。",
+    f4t: "报告单照片留存", f4d: "化验单、报告单拍照随记录保存，全屏缩放翻阅，可随时导出分享。",
+    f5t: "日历与统计", f5d: "日历回顾每一天的用药与检查，连续打卡天数、完成率一目了然。",
+    f6t: "iCloud 备份与导出", f6d: "备份保存在你自己的 iCloud Drive，换机可整体恢复；也可随时导出全部数据与照片。",
+    shotsTitle: "看一眼，就懂",
+    shotsSub: "今日待办、疾病详情、日历与统计。",
+    cap1: "今日用药，打卡一下就好",
+    cap2: "用药与检查，一处管理",
+    cap3: "每一天，都有记录",
+    cap4: "坚持，看得见",
+    privacyTitle: "健康数据，只属于你",
+    privacySub: "三个不：无账号、无追踪、无自建服务器。",
+    p1t: "数据只在本机", p1d: "所有记录保存在你的 iPhone 上，App 自身没有任何自建服务器，不向开发者上传数据。",
+    p2t: "备份在你自己的 iCloud", p2d: "可选备份由 Apple iCloud 服务承载，仅本人可见，连开发者都无法访问。",
+    p3t: "无账号、无追踪", p3d: "开箱即用，无需注册；不做任何行为追踪，报告单照片不随系统整机备份外泄。",
+    pricingTitle: "全部功能，免费使用",
+    pricingSub: "免费版含横幅广告；订阅会员仅用于去除广告，不锁任何功能。",
+    pricingBadge: "会员订阅 · 自动续费年订阅",
+    pricingPrice: "¥19.9", pricingPer: " / 年",
+    pricingNote: "订阅后完全无广告。可随时在「设置 > Apple ID > 订阅」中管理或取消。",
+    footerPrivacy: "隐私政策", footerSupport: "技术支持", footerTerms: "使用条款",
+    privacyURL: "https://suntxy.github.io/MedicalAssistant/privacy.html",
+    supportURL: "https://suntxy.github.io/MedicalAssistant/index.html",
+    htmlLang: "zh-Hans",
+    title: "时光药检 ChronoCure — 用药打卡与检查提醒"
+  },
+  en: {
+    brand: "ChronoCure",
+    tagline: "Organize medications and checkups by condition — never miss a dose or a follow-up.",
+    heroSub: "All data stays on your device. No account, no servers of our own; optional backups live in your own iCloud.",
+    ctaDownload: "Download on the App Store",
+    ctaFeatures: "Explore features",
+    featuresTitle: "Meds and checkups, in one place",
+    featuresSub: "A minimalist design that does one thing well: reminders and records.",
+    f1t: "Reminders & check-ins", f1d: "Custom medications, dosages and schedules with one-tap check-ins. A missed dose re-nudges after 30 minutes; finished slots stay silent.",
+    f2t: "Organized by condition", f2d: "Group medications and checkup plans by condition. Close one when you recover — no more to-dos or reminders.",
+    f3t: "Checkup plans", f3d: "Set the next date and a fixed repeat cycle, with reminders 1/3/7 days ahead. Completing one schedules the next automatically.",
+    f4t: "Report photos", f4d: "Capture lab reports and keep them with each record. Full-screen zoom viewer, export and share anytime.",
+    f5t: "Calendar & stats", f5d: "Review every day on a calendar, with streaks and completion rates at a glance.",
+    f6t: "iCloud backup & export", f6d: "Backups live in your own iCloud Drive for full restore on a new device. Export all data and photos anytime.",
+    shotsTitle: "See it at a glance",
+    shotsSub: "Today's to-dos, condition details, calendar and stats.",
+    cap1: "Today's doses, check in with one tap",
+    cap2: "Meds and checkups in one place",
+    cap3: "Every day, on record",
+    cap4: "Progress you can see",
+    privacyTitle: "Your health data belongs to you",
+    privacySub: "Three no's: no account, no tracking, no servers of our own.",
+    p1t: "On-device only", p1d: "Every record stays on your iPhone. The app runs no servers and uploads nothing to the developer.",
+    p2t: "Backups in your own iCloud", p2d: "Optional backups are carried by Apple iCloud, visible only to you — even the developer cannot access them.",
+    p3t: "No account, no tracking", p3d: "Works out of the box with no sign-up. No behavioral tracking, and report photos are excluded from system device backups.",
+    pricingTitle: "All features, free",
+    pricingSub: "The free version shows banner ads; membership only removes ads — nothing is ever locked.",
+    pricingBadge: "Membership · auto-renewable yearly",
+    pricingPrice: "$2.99", pricingPer: " / year",
+    pricingNote: "Completely ad-free after subscribing. Manage or cancel anytime in Settings > Apple ID > Subscriptions.",
+    footerPrivacy: "Privacy Policy", footerSupport: "Support", footerTerms: "Terms of Use",
+    privacyURL: "https://suntxy.github.io/MedicalAssistant/privacy-en.html",
+    supportURL: "https://suntxy.github.io/MedicalAssistant/index-en.html",
+    htmlLang: "en",
+    title: "ChronoCure — Meds & Checkup Reminders"
+  }
+};
+
+function setLang(lang){
+  const dict = i18n[lang];
+  document.documentElement.lang = dict.htmlLang;
+  document.title = dict.title;
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    const key = el.getAttribute("data-i18n");
+    if(dict[key] !== undefined) el.textContent = dict[key];
+  });
+  document.querySelectorAll("img[data-shot]").forEach(img=>{
+    img.src = "assets/" + img.getAttribute("data-shot") + "_" + lang + ".png";
+  });
+  document.getElementById("link-privacy").href = dict.privacyURL;
+  document.getElementById("link-support").href = dict.supportURL;
+  document.getElementById("btn-zh").classList.toggle("active", lang === "zh");
+  document.getElementById("btn-en").classList.toggle("active", lang === "en");
+  try{ localStorage.setItem("cc_lang", lang); }catch(e){}
+}
+
+let lang = "zh";
+try{
+  lang = localStorage.getItem("cc_lang")
+      || ((navigator.language || "zh").toLowerCase().startsWith("zh") ? "zh" : "en");
+}catch(e){}
+document.getElementById("btn-zh").addEventListener("click", ()=>setLang("zh"));
+document.getElementById("btn-en").addEventListener("click", ()=>setLang("en"));
+document.getElementById("cta-download").href = APP_STORE_URL;
+setLang(lang);
+</script>
+</body>
+</html>
